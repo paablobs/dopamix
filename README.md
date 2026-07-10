@@ -1,75 +1,73 @@
-# React + TypeScript + Vite
+# DopamiX
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Bet in style, win with excitement.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + **TypeScript 6**
+- **Chakra UI v3** — component library
+- **Zustand** — state management with localStorage persistence
+- **React Router v7** — client-side routing
+- **Framer Motion** — animations
+- **Recharts** — dashboard charts
+- **Vite 8** — build tooling
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+pnpm install
+pnpm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+> This project requires pnpm. npm and yarn are blocked by a preinstall script.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Command | Description |
+|---------|-------------|
+| `pnpm run dev` | Start dev server |
+| `pnpm run build` | Typecheck + production build |
+| `pnpm run lint` | Run ESLint |
+| `pnpm run preview` | Preview production build |
+
+## Features
+
+- **Sports betting** — fictional events with odds, stake selection, and auto-resolution
+- **Balance system** — welcome bonus, daily rewards, free refills
+- **Event lifecycle** — upcoming → live → finished with real-time transitions
+- **Achievement system** — unlockable milestones with migration support
+- **Rewards** — daily claims, spin wheel, mystery boxes
+- **Dashboard** — charts for balance history, win/loss ratio, daily activity
+- **Dark theme** — GitHub-inspired color palette
+
+## Project Structure
 
 ```
+src/
+├── app/            # App root and router
+├── components/     # Layout (TopBar, Sidebar, MainLayout, MobileNav)
+├── constants/      # Config values (betting, balance, rewards, events)
+├── features/       # Feature modules (betting, events, balance)
+├── hooks/          # Custom hooks (useCountdown, useInterval, useMediaQuery)
+├── pages/          # Route pages (Home, Events, History, Dashboard, Rewards, Settings)
+├── services/       # Business logic (betEngine, eventEngine, rewardEngine, notifications)
+├── stores/         # Zustand stores (bet, balance, event, reward, settings, ui)
+├── theme/          # Chakra UI theme config
+├── types/          # TypeScript interfaces
+└── utils/          # Helpers (format, probability, random, id)
+```
+
+## Deployment
+
+Deployed to GitHub Pages via GitHub Actions. Push to `main` triggers the workflow automatically.
+
+```bash
+# Manual build verification
+pnpm run build
+```
+
+The workflow builds the app, copies `index.html` to `404.html` for SPA routing, and deploys to Pages.
+
+## License
+
+Private project.

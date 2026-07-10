@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { HomePage } from '../pages/HomePage';
 import { EventsPage } from '../pages/EventsPage';
@@ -7,7 +7,7 @@ import { DashboardPage } from '../pages/DashboardPage';
 import { RewardsPage } from '../pages/RewardsPage';
 import { SettingsPage } from '../pages/SettingsPage';
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     element: <MainLayout />,
     children: [

@@ -1,4 +1,4 @@
-import type { Bet, BetSelection } from '../types';
+import type { Bet, BetSelection, EventOdds } from '../types';
 import { HOUSE_EDGE, XP_PER_BET, XP_PER_WIN_BONUS } from '../constants/betting';
 import { randomInt, weightedRandom } from '../utils/random';
 import { generateId } from '../utils/id';
@@ -52,6 +52,7 @@ export function createBet(
   eventSummary: string,
   selection: BetSelection,
   odds: number,
+  eventOdds: EventOdds,
   stake: number
 ): Bet {
   return {
@@ -60,6 +61,7 @@ export function createBet(
     eventSummary,
     selection,
     odds,
+    eventOdds,
     stake,
     potentialWin: calculatePotentialWin(stake, odds),
     status: 'active',

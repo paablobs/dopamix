@@ -1,6 +1,7 @@
 import { Box, VStack, Text } from '@chakra-ui/react';
 import { NavLink } from 'react-router-dom';
 import { Home, Trophy, History, BarChart3, Gift, Settings } from 'lucide-react';
+import { useUiStore } from '../../stores/uiStore';
 
 const links = [
   { to: '/', label: 'Home', icon: Home },
@@ -12,6 +13,9 @@ const links = [
 ];
 
 export function Sidebar() {
+  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
+  const closeSidebar = useUiStore((s) => s.closeSidebar);
+
   return (
     <Box
       position="fixed"
@@ -21,7 +25,7 @@ export function Sidebar() {
       w="240px"
       bg="#0D1117"
       borderRight="1px solid #21262D"
-      display={{ base: 'none', md: 'flex' }}
+      display={{ base: sidebarOpen ? 'flex' : 'none', md: 'flex' }}
       flexDirection="column"
       pt={4}
       zIndex={900}
@@ -32,6 +36,7 @@ export function Sidebar() {
             key={link.to}
             to={link.to}
             end={link.to === '/'}
+            onClick={closeSidebar}
             style={{ textDecoration: 'none' }}
           >
             {({ isActive }) => (

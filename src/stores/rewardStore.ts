@@ -75,6 +75,7 @@ interface RewardState {
   activeMultiplier: number;
 
   addXp: (amount: number) => void;
+  consumeMultiplier: () => number;
   updateStreak: () => void;
   checkAndUnlockAchievements: () => void;
   claimDailyReward: () => number | null;
@@ -82,7 +83,7 @@ interface RewardState {
   openMysteryBox: () => { type: 'credits' | 'xp'; amount: number } | null;
   selectAvatar: (id: string) => void;
   selectTheme: (id: string) => void;
-  incrementBetCount: () => void;
+  incrementBetCount: (stake: number) => void;
   recordWin: (amount: number) => void;
   recordLoss: () => void;
 }
@@ -104,6 +105,7 @@ export const useRewardStore = create<RewardState>()(
       activeMultiplier: 1,
 
       addXp: (amount) => {
+        if (!Number.isFinite(amount) || amount <= 0) return;
         set((state) => {
           const progress = { ...state.profile.progress };
           progress.xp += amount;
@@ -128,6 +130,12 @@ export const useRewardStore = create<RewardState>()(
             profile: { ...state.profile, progress },
           };
         });
+      },
+
+      consumeMultiplier: () => {
+        const multiplier = get().activeMultiplier;
+        if (multiplier !== 1) set({ activeMultiplier: 1 });
+        return multiplier;
       },
 
       updateStreak: () => {
@@ -212,7 +220,7 @@ export const useRewardStore = create<RewardState>()(
         } else {
           get().addXp(result.amount);
         }
-        set({ mysteryBoxCount: 0 });
+        set((state) => ({ mysteryBoxCount: Math.max(0, state.mysteryBoxCount - 5) }));
         return result;
       },
 
@@ -235,10 +243,11 @@ export const useRewardStore = create<RewardState>()(
         }));
       },
 
-      incrementBetCount: () => {
+      incrementBetCount: (stake) => {
         set((state) => {
           const progress = { ...state.profile.progress };
           progress.totalBetsPlaced += 1;
+          progress.totalWagered += stake;
           return {
             profile: { ...state.profile, progress },
             mysteryBoxCount: state.mysteryBoxCount + 1,

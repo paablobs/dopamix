@@ -54,6 +54,7 @@ export function EventCard({ event }: EventCardProps) {
       eventSummary,
       selection,
       odds,
+      eventOdds: event.odds,
       homeIcon: event.homeIcon,
       awayIcon: event.awayIcon,
     });

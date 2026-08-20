@@ -12,8 +12,9 @@ import {
   Dialog,
   Portal,
 } from '@chakra-ui/react';
-import { Volume2, VolumeX, Sparkles, Coins, AlertTriangle } from 'lucide-react';
+import { Sparkles, Coins, AlertTriangle } from 'lucide-react';
 import { useSettingsStore } from '../stores/settingsStore';
+import { clearAllStorage } from '../services/storage';
 
 const currencyCollection = createListCollection({
   items: [
@@ -24,16 +25,14 @@ const currencyCollection = createListCollection({
 });
 
 export function SettingsPage() {
-  const soundEnabled = useSettingsStore((s) => s.soundEnabled);
   const animationsEnabled = useSettingsStore((s) => s.animationsEnabled);
   const currencyFormat = useSettingsStore((s) => s.currencyFormat);
-  const toggleSound = useSettingsStore((s) => s.toggleSound);
   const toggleAnimations = useSettingsStore((s) => s.toggleAnimations);
   const setCurrencyFormat = useSettingsStore((s) => s.setCurrencyFormat);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleReset = () => {
-    localStorage.clear();
+    clearAllStorage();
     window.location.reload();
   };
 
@@ -43,21 +42,6 @@ export function SettingsPage() {
 
       <Box bg="#161B22" border="1px solid #30363D" borderRadius="lg" p={6}>
         <VStack gap={6} align="stretch">
-          <HStack justify="space-between" align="center">
-            <HStack gap={3}>
-              <Box color={soundEnabled ? '#00D395' : '#6E7681'}>
-                {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-              </Box>
-              <VStack align="start" gap={0}>
-                <Text fontSize="sm" fontWeight="600" color="#F0F6FC">Sound</Text>
-                <Text fontSize="xs" color="#6E7681">Enable/disable sound effects</Text>
-              </VStack>
-            </HStack>
-            <Switch.Root checked={soundEnabled} onCheckedChange={toggleSound}>
-              <Switch.Control><Switch.Thumb /></Switch.Control>
-            </Switch.Root>
-          </HStack>
-
           <HStack justify="space-between" align="center">
             <HStack gap={3}>
               <Box color={animationsEnabled ? '#00D395' : '#6E7681'}>

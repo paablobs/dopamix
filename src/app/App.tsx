@@ -4,6 +4,7 @@ import { AppRouter } from './router';
 import { useEventStore } from '../stores/eventStore';
 import { useBetStore } from '../stores/betStore';
 import { useRewardStore } from '../stores/rewardStore';
+import { useSettingsStore } from '../stores/settingsStore';
 import { DailyRewardModal } from '../features/balance/components/DailyRewardModal';
 import { toaster } from '../services/notificationService';
 
@@ -31,6 +32,7 @@ export default function App() {
   const tickEvents = useEventStore((s) => s.tickEvents);
   const tickBets = useBetStore((s) => s.tickBets);
   const updateStreak = useRewardStore((s) => s.updateStreak);
+  const animationsEnabled = useSettingsStore((s) => s.animationsEnabled);
   const [showDailyReward, setShowDailyReward] = useState(shouldShowWelcome);
 
   useEffect(() => {
@@ -45,6 +47,10 @@ export default function App() {
   }, [tickBets, tickEvents, refreshExpired]);
 
   useInterval(tickAndRefresh, 1000);
+
+  useEffect(() => {
+    document.documentElement.dataset.animations = animationsEnabled ? 'on' : 'off';
+  }, [animationsEnabled]);
 
   return (
     <>

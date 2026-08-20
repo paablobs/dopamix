@@ -1,5 +1,17 @@
+export type CurrencyFormat = 'credits' | 'coins' | 'gems';
+
+const CURRENCY_LABELS: Record<CurrencyFormat, string> = {
+  credits: 'credits',
+  coins: 'coins',
+  gems: 'gems',
+};
+
 export function formatCredits(amount: number): string {
   return amount.toLocaleString('en-US');
+}
+
+export function formatCurrency(amount: number, currency: CurrencyFormat): string {
+  return `${formatCredits(amount)} ${CURRENCY_LABELS[currency]}`;
 }
 
 export function formatOdds(odds: number): string {

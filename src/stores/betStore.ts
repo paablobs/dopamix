@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Bet, BetSlipItem } from '../types';
-import { createBet, calculateXpReward } from '../services/betEngine';
+import { createBet, calculateXpReward, resolveOutcome } from '../services/betEngine';
 import { useBalanceStore } from './balanceStore';
 import { useRewardStore } from './rewardStore';
+import { useEventStore } from './eventStore';
 import { notifyBetWon, notifyBetLost } from '../services/notificationService';
 import { MAX_BET_HISTORY } from '../constants/rewards';
+import { MIN_STAKE } from '../constants/betting';
 
 interface BetState {
   betSlip: BetSlipItem[];
@@ -26,11 +28,11 @@ export const useBetStore = create<BetState>()(
       betHistory: [],
 
       addToBetSlip: (item) => {
-        set((state) => {
-          const exists = state.betSlip.find((b) => b.eventId === item.eventId);
-          if (exists) return state;
-          return { betSlip: [...state.betSlip, item] };
-        });
+        set((state) => ({
+          betSlip: state.betSlip.some((b) => b.eventId === item.eventId)
+            ? state.betSlip.map((b) => b.eventId === item.eventId ? item : b)
+            : [item],
+        }));
       },
 
       removeFromBetSlip: (eventId) => {
@@ -43,17 +45,22 @@ export const useBetStore = create<BetState>()(
 
       placeBet: (stake) => {
         const { betSlip } = get();
-        if (betSlip.length === 0) return false;
+        if (betSlip.length !== 1) return false;
+        if (!Number.isSafeInteger(stake) || stake < MIN_STAKE) return false;
+
+        const selection = betSlip[0];
+        const event = useEventStore.getState().events.find((e) => e.id === selection.eventId);
+        if (!event || event.status === 'finished') return false;
 
         const balanceStore = useBalanceStore.getState();
         if (!balanceStore.deductCredits(stake)) return false;
 
-        const selection = betSlip[0];
         const bet = createBet(
           selection.eventId,
           selection.eventSummary,
           selection.selection,
           selection.odds,
+          selection.eventOdds,
           stake
         );
 
@@ -64,7 +71,7 @@ export const useBetStore = create<BetState>()(
 
         const rewardStore = useRewardStore.getState();
         rewardStore.addXp(10);
-        rewardStore.incrementBetCount();
+        rewardStore.incrementBetCount(stake);
         return true;
       },
 
@@ -86,13 +93,17 @@ export const useBetStore = create<BetState>()(
         const rewardStore = useRewardStore.getState();
 
         const resolvedBets = toResolve.map((bet) => {
-          const won = Math.random() > 0.52;
-          const profit = won ? bet.potentialWin - bet.stake : -bet.stake;
+          const won = bet.eventOdds
+            ? resolveOutcome(bet.eventOdds.home, bet.eventOdds.draw, bet.eventOdds.away, bet.selection)
+            : Math.random() > 0.52;
+          const multiplier = won ? rewardStore.consumeMultiplier() : 1;
+          const payout = bet.potentialWin * multiplier;
+          const profit = won ? payout - bet.stake : -bet.stake;
 
           if (won) {
-            balanceStore.addCredits(bet.potentialWin, `Won: ${bet.eventSummary}`);
-            notifyBetWon(bet.potentialWin);
-            rewardStore.recordWin(bet.potentialWin);
+            balanceStore.addCredits(payout, `Won: ${bet.eventSummary}`);
+            notifyBetWon(payout);
+            rewardStore.recordWin(payout);
           } else {
             notifyBetLost();
             rewardStore.recordLoss();

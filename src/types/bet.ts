@@ -1,3 +1,5 @@
+import type { EventOdds } from './event';
+
 export type BetStatus = 'active' | 'won' | 'lost';
 
 export type BetSelection = 'home' | 'draw' | 'away';
@@ -7,6 +9,7 @@ export interface BetSlipItem {
   eventSummary: string;
   selection: BetSelection;
   odds: number;
+  eventOdds: EventOdds;
   homeIcon: string;
   awayIcon: string;
 }
@@ -17,6 +20,7 @@ export interface Bet {
   eventSummary: string;
   selection: BetSelection;
   odds: number;
+  eventOdds?: EventOdds;
   stake: number;
   potentialWin: number;
   status: BetStatus;

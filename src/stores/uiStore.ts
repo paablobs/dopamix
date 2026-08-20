@@ -5,6 +5,7 @@ interface UiState {
   betSlipOpen: boolean;
   activeModal: string | null;
   toggleSidebar: () => void;
+  closeSidebar: () => void;
   toggleBetSlip: () => void;
   openBetSlip: () => void;
   closeBetSlip: () => void;
@@ -18,6 +19,7 @@ export const useUiStore = create<UiState>()((set) => ({
   activeModal: null,
 
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
+  closeSidebar: () => set({ sidebarOpen: false }),
   toggleBetSlip: () => set((s) => ({ betSlipOpen: !s.betSlipOpen })),
   openBetSlip: () => set({ betSlipOpen: true }),
   closeBetSlip: () => set({ betSlipOpen: false }),

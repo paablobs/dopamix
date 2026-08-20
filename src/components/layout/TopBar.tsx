@@ -1,31 +1,16 @@
 import { Flex, Text, IconButton, HStack } from '@chakra-ui/react';
-import { Menu, Coins, Bell, Settings } from 'lucide-react';
+import { Menu, Coins, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useBalanceStore } from '../../stores/balanceStore';
 import { useUiStore } from '../../stores/uiStore';
-import { useEffect, useState } from 'react';
-
-function AnimatedCounter({ value }: { value: number }) {
-  const [display, setDisplay] = useState(value);
-
-  useEffect(() => {
-    if (display === value) return;
-    const diff = value - display;
-    const step = Math.ceil(Math.abs(diff) / 10);
-    const timer = setTimeout(() => {
-      setDisplay((prev) => {
-        if (Math.abs(value - prev) <= step) return value;
-        return prev + (diff > 0 ? step : -step);
-      });
-    }, 16);
-    return () => clearTimeout(timer);
-  }, [value, display]);
-
-  return <>{display.toLocaleString()}</>;
-}
+import { useSettingsStore } from '../../stores/settingsStore';
+import { formatCurrency } from '../../utils/format';
 
 export function TopBar() {
   const balance = useBalanceStore((s) => s.balance);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const navigate = useNavigate();
+  const currencyFormat = useSettingsStore((s) => s.currencyFormat);
 
   return (
     <Flex
@@ -75,24 +60,16 @@ export function TopBar() {
         >
           <Coins size={16} color="#FFB800" />
           <Text fontSize="sm" fontWeight="600" color="#FFB800">
-            <AnimatedCounter value={balance} />
+            {formatCurrency(balance, currencyFormat)}
           </Text>
         </HStack>
-        <IconButton
-          aria-label="Notifications"
-          variant="ghost"
-          size="sm"
-          color="#8B949E"
-          _hover={{ color: '#F0F6FC' }}
-        >
-          <Bell size={18} />
-        </IconButton>
         <IconButton
           aria-label="Settings"
           variant="ghost"
           size="sm"
           color="#8B949E"
           _hover={{ color: '#F0F6FC' }}
+          onClick={() => navigate('/settings')}
         >
           <Settings size={18} />
         </IconButton>

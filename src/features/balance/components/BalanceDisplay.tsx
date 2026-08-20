@@ -3,39 +3,10 @@ import { HStack, Text } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Coins } from 'lucide-react';
 import { useBalanceStore } from '../../../stores/balanceStore';
+import { useSettingsStore } from '../../../stores/settingsStore';
+import { formatCurrency } from '../../../utils/format';
 
 const MotionHStack = motion.create(HStack);
-
-function AnimatedCounter({ value }: { value: number }) {
-  const [display, setDisplay] = useState(value);
-  const rafRef = useRef<number>(0);
-
-  useEffect(() => {
-    const start = display;
-    const diff = value - start;
-    if (diff === 0) return;
-
-    const duration = 600;
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setDisplay(Math.round(start + diff * eased));
-
-      if (progress < 1) {
-        rafRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(rafRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
-
-  return <>{display.toLocaleString('en-US')}</>;
-}
 
 interface BalanceDisplayProps {
   size?: 'sm' | 'md' | 'lg';
@@ -43,6 +14,7 @@ interface BalanceDisplayProps {
 
 export function BalanceDisplay({ size = 'md' }: BalanceDisplayProps) {
   const balance = useBalanceStore((s) => s.balance);
+  const currencyFormat = useSettingsStore((s) => s.currencyFormat);
   const [pulse, setPulse] = useState(false);
   const prevBalance = useRef(balance);
 
@@ -71,7 +43,7 @@ export function BalanceDisplay({ size = 'md' }: BalanceDisplayProps) {
     >
       <Coins size={iconSize} color="#FFB800" />
       <Text fontSize={textSize} fontWeight="600" color="#FFB800" fontVariantNumeric="tabular-nums">
-        <AnimatedCounter value={balance} />
+        {formatCurrency(balance, currencyFormat)}
       </Text>
     </MotionHStack>
   );

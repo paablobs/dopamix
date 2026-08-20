@@ -1,8 +1,10 @@
 import { Button, Text } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Gift } from 'lucide-react';
 import { useBalanceStore } from '../../../stores/balanceStore';
-import { WELCOME_BONUS, DAILY_BONUS, FREE_REFILL_AMOUNT } from '../../../constants/balance';
+import { useRewardStore } from '../../../stores/rewardStore';
+import { WELCOME_BONUS, FREE_REFILL_AMOUNT } from '../../../constants/balance';
 
 const MotionButton = motion.create(Button);
 
@@ -13,19 +15,29 @@ interface ClaimBonusButtonProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-const VARIANT_CONFIG: Record<BonusVariant, { label: string; amount: number; color: string }> = {
+const VARIANT_CONFIG: Record<BonusVariant, { label: string; amount: number | null; color: string }> = {
   welcome: { label: 'Welcome bonus', amount: WELCOME_BONUS, color: '#00D395' },
-  daily: { label: 'Daily bonus', amount: DAILY_BONUS, color: '#FFB800' },
+  daily: { label: 'Daily bonus', amount: null, color: '#FFB800' },
   refill: { label: 'Free refill', amount: FREE_REFILL_AMOUNT, color: '#7C3AED' },
 };
 
 export function ClaimBonusButton({ variant, size = 'md' }: ClaimBonusButtonProps) {
   const welcomeClaimed = useBalanceStore((s) => s.welcomeClaimed);
   const claimWelcomeBonus = useBalanceStore((s) => s.claimWelcomeBonus);
-  const claimDailyBonus = useBalanceStore((s) => s.claimDailyBonus);
-  const canClaimDaily = useBalanceStore((s) => s.canClaimDaily);
+  const claimDailyReward = useRewardStore((s) => s.claimDailyReward);
+  const lastDailyClaim = useRewardStore((s) => s.lastDailyClaim);
   const freeRefill = useBalanceStore((s) => s.freeRefill);
   const canFreeRefill = useBalanceStore((s) => s.canFreeRefill);
+  const [canClaimDaily, setCanClaimDaily] = useState(true);
+
+  useEffect(() => {
+    const check = () => {
+      setCanClaimDaily(!lastDailyClaim || Date.now() - lastDailyClaim >= 86400000);
+    };
+    check();
+    const interval = setInterval(check, 60000);
+    return () => clearInterval(interval);
+  }, [lastDailyClaim]);
 
   const config = VARIANT_CONFIG[variant];
 
@@ -33,14 +45,14 @@ export function ClaimBonusButton({ variant, size = 'md' }: ClaimBonusButtonProps
     variant === 'welcome'
       ? welcomeClaimed
       : variant === 'daily'
-        ? !canClaimDaily()
+        ? !canClaimDaily
         : !canFreeRefill();
 
   const handleClaim = () => {
     if (variant === 'welcome') {
       claimWelcomeBonus();
     } else if (variant === 'daily') {
-      claimDailyBonus();
+      claimDailyReward();
     } else {
       freeRefill();
     }
@@ -61,7 +73,9 @@ export function ClaimBonusButton({ variant, size = 'md' }: ClaimBonusButtonProps
     >
       <Gift size={16} />
       <Text>
-        {isDisabled ? 'Claimed' : `${config.label} (+${config.amount.toLocaleString('en-US')})`}
+        {isDisabled
+          ? 'Claimed'
+          : `${config.label}${config.amount === null ? '' : ` (+${config.amount.toLocaleString('en-US')})`}`}
       </Text>
     </MotionButton>
   );

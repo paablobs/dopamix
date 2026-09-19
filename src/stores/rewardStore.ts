@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Achievement, Reward, UserProgress, SpinResult } from '../types';
 import { generateId } from '../utils/id';
 import { calculateLevelXp, generateSpinResult, generateMysteryBoxReward, checkAchievements } from '../services/rewardEngine';
-import { AVATARS, THEMES, DAILY_COOLDOWN } from '../constants/rewards';
+import { AVATARS, THEMES, DAILY_COOLDOWN, MYSTERY_BOX_INTERVAL } from '../constants/rewards';
 import { notifyAchievement, notifyLevelUp, notifyCreditsAdded } from '../services/notificationService';
 import { useBalanceStore } from './balanceStore';
 
@@ -44,7 +44,14 @@ const ACHIEVEMENT_DEFINITIONS: Omit<Achievement, 'id' | 'unlockedAt'>[] = [
   { key: 'total_won_5000', name: 'High Earnings', description: 'Win a total of 5,000', icon: '🎖️', requirement: { type: 'total_won', value: 5000 } },
 ];
 
-const ACHIEVEMENTS_VERSION = 2;
+const REWARD_STORE_VERSION = 3;
+
+const DEFAULT_PROFILE = {
+  displayName: 'Player',
+  avatar: 'tiger',
+  createdAt: 0,
+  progress: { ...DEFAULT_PROGRESS },
+};
 
 function buildDefaultAchievements(): Achievement[] {
   return ACHIEVEMENT_DEFINITIONS.map((a) => ({
@@ -55,14 +62,62 @@ function buildDefaultAchievements(): Achievement[] {
 }
 
 function migrateAchievements(persisted: Achievement[]): Achievement[] {
+  const validPersisted = persisted.filter((achievement) => (
+    achievement &&
+    typeof achievement.id === 'string' &&
+    typeof achievement.key === 'string'
+  ));
   const defaults = buildDefaultAchievements();
   return defaults.map((def) => {
-    const existing = persisted.find((p) => p.key === def.key);
+    const existing = validPersisted.find((p) => p.key === def.key);
     if (existing) {
-      return { ...def, id: existing.id, unlockedAt: existing.unlockedAt };
+      return {
+        ...def,
+        id: existing.id,
+        unlockedAt: typeof existing.unlockedAt === 'number' || existing.unlockedAt === null
+          ? existing.unlockedAt
+          : null,
+      };
     }
     return def;
   });
+}
+
+function migrateRewardState(persisted: unknown): Partial<RewardState> {
+  if (!persisted || typeof persisted !== 'object') return {};
+  const state = persisted as Partial<RewardState>;
+  const persistedProfile = state.profile;
+  const persistedProgress = persistedProfile?.progress;
+
+  return {
+    ...state,
+    profile: {
+      ...DEFAULT_PROFILE,
+      ...persistedProfile,
+      createdAt: typeof persistedProfile?.createdAt === 'number' ? persistedProfile.createdAt : Date.now(),
+      progress: {
+        ...DEFAULT_PROGRESS,
+        ...persistedProgress,
+        loginHistory: Array.isArray(persistedProgress?.loginHistory) ? persistedProgress.loginHistory : [],
+        unlockedAvatars: Array.isArray(persistedProgress?.unlockedAvatars)
+          ? persistedProgress.unlockedAvatars
+          : [...DEFAULT_PROGRESS.unlockedAvatars],
+        unlockedThemes: Array.isArray(persistedProgress?.unlockedThemes)
+          ? persistedProgress.unlockedThemes
+          : [...DEFAULT_PROGRESS.unlockedThemes],
+      },
+    },
+    achievements: Array.isArray(state.achievements) ? migrateAchievements(state.achievements) : buildDefaultAchievements(),
+    rewards: Array.isArray(state.rewards) ? state.rewards : [],
+    lastDailyClaim: typeof state.lastDailyClaim === 'number' ? state.lastDailyClaim : null,
+    lastSpinClaim: typeof state.lastSpinClaim === 'number' ? state.lastSpinClaim : null,
+    mysteryBoxCount: Number.isFinite(state.mysteryBoxCount) && (state.mysteryBoxCount ?? 0) >= 0
+      ? state.mysteryBoxCount
+      : 0,
+    activeMultiplier: Number.isFinite(state.activeMultiplier) && (state.activeMultiplier ?? 1) > 0
+      ? state.activeMultiplier
+      : 1,
+  };
 }
 
 interface RewardState {
@@ -130,6 +185,7 @@ export const useRewardStore = create<RewardState>()(
             profile: { ...state.profile, progress },
           };
         });
+        get().checkAndUnlockAchievements();
       },
 
       consumeMultiplier: () => {
@@ -158,6 +214,7 @@ export const useRewardStore = create<RewardState>()(
 
           return { profile: { ...state.profile, progress } };
         });
+        get().checkAndUnlockAchievements();
       },
 
       checkAndUnlockAchievements: () => {
@@ -213,6 +270,15 @@ export const useRewardStore = create<RewardState>()(
       },
 
       openMysteryBox: () => {
+        let opened = false;
+        set((state) => {
+          if (state.mysteryBoxCount < MYSTERY_BOX_INTERVAL) return state;
+          opened = true;
+          return { mysteryBoxCount: state.mysteryBoxCount - MYSTERY_BOX_INTERVAL };
+        });
+
+        if (!opened) return null;
+
         const result = generateMysteryBoxReward();
         if (result.type === 'credits') {
           useBalanceStore.getState().addCredits(result.amount, 'Mystery box');
@@ -220,27 +286,34 @@ export const useRewardStore = create<RewardState>()(
         } else {
           get().addXp(result.amount);
         }
-        set((state) => ({ mysteryBoxCount: Math.max(0, state.mysteryBoxCount - 5) }));
         return result;
       },
 
       selectAvatar: (id) => {
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            avatar: id,
-            progress: { ...state.profile.progress, selectedAvatar: id },
-          },
-        }));
+        if (!AVATARS.some((avatar) => avatar.id === id)) return;
+        set((state) => {
+          if (!state.profile.progress.unlockedAvatars.includes(id)) return state;
+          return {
+            profile: {
+              ...state.profile,
+              avatar: id,
+              progress: { ...state.profile.progress, selectedAvatar: id },
+            },
+          };
+        });
       },
 
       selectTheme: (id) => {
-        set((state) => ({
-          profile: {
-            ...state.profile,
-            progress: { ...state.profile.progress, selectedTheme: id },
-          },
-        }));
+        if (!THEMES.some((theme) => theme.id === id)) return;
+        set((state) => {
+          if (!state.profile.progress.unlockedThemes.includes(id)) return state;
+          return {
+            profile: {
+              ...state.profile,
+              progress: { ...state.profile.progress, selectedTheme: id },
+            },
+          };
+        });
       },
 
       incrementBetCount: (stake) => {
@@ -276,17 +349,14 @@ export const useRewardStore = create<RewardState>()(
     }),
     {
       name: 'dopamix_rewards',
-      version: ACHIEVEMENTS_VERSION,
-      migrate: (persisted: unknown, version: number) => {
-        if (version < ACHIEVEMENTS_VERSION) {
-          const state = persisted as Partial<RewardState>;
-          return {
-            ...state,
-            achievements: migrateAchievements(state.achievements ?? []),
-          };
-        }
-        return persisted;
-      },
+      version: REWARD_STORE_VERSION,
+      migrate: (persisted: unknown) => migrateRewardState(persisted),
     }
   )
 );
+
+useBalanceStore.subscribe((state, previousState) => {
+  if (state.balance !== previousState.balance) {
+    useRewardStore.getState().checkAndUnlockAchievements();
+  }
+});

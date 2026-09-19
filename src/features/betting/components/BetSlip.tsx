@@ -104,6 +104,7 @@ export function BetSlip() {
           display={{ base: betSlipOpen ? 'flex' : 'none', lg: 'flex' }}
           flexDirection="column"
           overflow="hidden"
+          paddingBottom={{ base: 'env(safe-area-inset-bottom)', lg: 0 }}
         >
           <HStack justify="space-between" align="center" px={4} py={3} borderBottom="1px solid #30363D">
             <HStack gap={2}>

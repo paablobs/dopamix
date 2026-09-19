@@ -66,9 +66,9 @@ export default function App() {
             px={4}
             py={3}
             boxShadow="lg"
-            width="auto"
-            minW="280px"
-            maxW="380px"
+            width={{ base: 'calc(100vw - 32px)', sm: 'auto' }}
+            minW={{ base: 0, sm: '280px' }}
+            maxW={{ base: 'calc(100vw - 32px)', sm: '380px' }}
           >
             <HStack gap={3} align="start" flex={1}>
               <Box
@@ -86,8 +86,12 @@ export default function App() {
                 }
               />
               <Box flex={1}>
-                <Toast.Title color="#F0F6FC" fontWeight="600" fontSize="sm" />
-                <Toast.Description color="#8B949E" fontSize="xs" mt={0.5} />
+                <Toast.Title color="#F0F6FC" fontWeight="600" fontSize="sm">
+                  {toast.title}
+                </Toast.Title>
+                <Toast.Description color="#8B949E" fontSize="xs" mt={0.5}>
+                  {toast.description}
+                </Toast.Description>
               </Box>
             </HStack>
             <Toast.CloseTrigger color="#6E7681" _hover={{ color: '#F0F6FC' }} />

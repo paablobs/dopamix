@@ -37,17 +37,17 @@ export function SettingsPage() {
   };
 
   return (
-    <VStack gap={8} align="stretch" w="full" maxW="600px">
+    <VStack gap={{ base: 6, md: 8 }} align="stretch" w="full" maxW="600px">
       <Heading size="lg" color="#F0F6FC">Settings</Heading>
 
-      <Box bg="#161B22" border="1px solid #30363D" borderRadius="lg" p={6}>
+      <Box bg="#161B22" border="1px solid #30363D" borderRadius="lg" p={{ base: 4, sm: 6 }}>
         <VStack gap={6} align="stretch">
-          <HStack justify="space-between" align="center">
-            <HStack gap={3}>
+          <HStack justify="space-between" align={{ base: 'start', sm: 'center' }} gap={4}>
+            <HStack gap={3} minW={0}>
               <Box color={animationsEnabled ? '#00D395' : '#6E7681'}>
                 <Sparkles size={20} />
               </Box>
-              <VStack align="start" gap={0}>
+              <VStack align="start" gap={0} minW={0}>
                 <Text fontSize="sm" fontWeight="600" color="#F0F6FC">Animations</Text>
                 <Text fontSize="xs" color="#6E7681">Enable/disable animations</Text>
               </VStack>
@@ -57,10 +57,15 @@ export function SettingsPage() {
             </Switch.Root>
           </HStack>
 
-          <HStack justify="space-between" align="center">
-            <HStack gap={3}>
+          <HStack
+            justify="space-between"
+            align={{ base: 'stretch', sm: 'center' }}
+            gap={4}
+            flexDirection={{ base: 'column', sm: 'row' }}
+          >
+            <HStack gap={3} minW={0}>
               <Box color="#FFB800"><Coins size={20} /></Box>
-              <VStack align="start" gap={0}>
+              <VStack align="start" gap={0} minW={0}>
                 <Text fontSize="sm" fontWeight="600" color="#F0F6FC">Currency format</Text>
                 <Text fontSize="xs" color="#6E7681">Choose how to display balance</Text>
               </VStack>
@@ -69,7 +74,8 @@ export function SettingsPage() {
               value={[currencyFormat]}
               onValueChange={(e) => setCurrencyFormat(e.value[0] as 'credits' | 'coins' | 'gems')}
               collection={currencyCollection}
-              w="160px"
+              w={{ base: 'full', sm: '160px' }}
+              flexShrink={0}
             >
               <Select.Control>
                 <Select.ValueText color="#F0F6FC" />

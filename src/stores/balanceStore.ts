@@ -16,6 +16,34 @@ interface BalanceState {
   canFreeRefill: () => boolean;
 }
 
+const BALANCE_STORE_VERSION = 2;
+
+function migrateBalanceState(persisted: unknown): Partial<BalanceState> {
+  if (!persisted || typeof persisted !== 'object') return {};
+  const state = persisted as Partial<BalanceState>;
+  const balance = typeof state.balance === 'number' && Number.isFinite(state.balance) && state.balance >= 0
+    ? state.balance
+    : 0;
+  const transactions = Array.isArray(state.transactions)
+    ? state.transactions.filter((transaction) => (
+      transaction &&
+      typeof transaction.id === 'string' &&
+      typeof transaction.amount === 'number' &&
+      Number.isFinite(transaction.amount) &&
+      typeof transaction.reason === 'string' &&
+      typeof transaction.timestamp === 'number' &&
+      Number.isFinite(transaction.timestamp) &&
+      (transaction.type === 'credit' || transaction.type === 'debit')
+    ))
+    : [];
+
+  return {
+    balance,
+    transactions,
+    welcomeClaimed: state.welcomeClaimed === true,
+  };
+}
+
 export const useBalanceStore = create<BalanceState>()(
   persist(
     (set, get) => ({
@@ -67,6 +95,10 @@ export const useBalanceStore = create<BalanceState>()(
         return get().balance < FREE_REFILL_THRESHOLD;
       },
     }),
-    { name: 'dopamix_balance' }
+    {
+      name: 'dopamix_balance',
+      version: BALANCE_STORE_VERSION,
+      migrate: (persisted: unknown) => migrateBalanceState(persisted),
+    }
   )
 );

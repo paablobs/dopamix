@@ -9,6 +9,7 @@ import { formatCurrency } from '../../utils/format';
 export function TopBar() {
   const balance = useBalanceStore((s) => s.balance);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const sidebarOpen = useUiStore((s) => s.sidebarOpen);
   const navigate = useNavigate();
   const currencyFormat = useSettingsStore((s) => s.currencyFormat);
 
@@ -29,6 +30,8 @@ export function TopBar() {
       <HStack gap={3}>
         <IconButton
           aria-label="Menu"
+          aria-expanded={sidebarOpen}
+          aria-controls="main-sidebar"
           variant="ghost"
           size="sm"
           display={{ base: 'flex', md: 'none' }}

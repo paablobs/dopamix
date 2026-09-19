@@ -20,6 +20,18 @@ interface BetState {
   tickBets: () => void;
 }
 
+const BET_STORE_VERSION = 2;
+
+function migrateBetState(persisted: unknown): Partial<BetState> {
+  if (!persisted || typeof persisted !== 'object') return {};
+  const state = persisted as Partial<BetState>;
+  return {
+    betSlip: Array.isArray(state.betSlip) ? state.betSlip : [],
+    activeBets: Array.isArray(state.activeBets) ? state.activeBets : [],
+    betHistory: Array.isArray(state.betHistory) ? state.betHistory : [],
+  };
+}
+
 export const useBetStore = create<BetState>()(
   persist(
     (set, get) => ({
@@ -131,6 +143,10 @@ export const useBetStore = create<BetState>()(
         }));
       },
     }),
-    { name: 'dopamix_bets' }
+    {
+      name: 'dopamix_bets',
+      version: BET_STORE_VERSION,
+      migrate: (persisted: unknown) => migrateBetState(persisted),
+    }
   )
 );

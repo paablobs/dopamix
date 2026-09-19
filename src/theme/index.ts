@@ -66,8 +66,8 @@ const config = defineConfig({
         },
         fg: {
           DEFAULT: { value: { _light: '#1a1a2e', _dark: '#F0F6FC' } },
-          subtle: { value: { _light: '#6b7280', _dark: '#8B949E' } },
-          muted: { value: { _light: '#9ca3af', _dark: '#6E7681' } },
+          subtle: { value: { _light: '#4b5563', _dark: '#B1BAC4' } },
+          muted: { value: { _light: '#6b7280', _dark: '#8B949E' } },
         },
       },
     },
@@ -77,6 +77,15 @@ const config = defineConfig({
       bg: { _dark: '#0D1117' },
       color: { _dark: '#F0F6FC' },
       fontFamily: 'body',
+      lineHeight: '1.5',
+      colorScheme: { _dark: 'dark' },
+    },
+    'button, a, input, select, textarea': {
+      _focusVisible: {
+        outline: '2px solid',
+        outlineColor: 'brand.400',
+        outlineOffset: '2px',
+      },
     },
     '::-webkit-scrollbar': {
       width: '6px',

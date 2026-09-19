@@ -14,6 +14,19 @@ interface EventState {
   tickEvents: () => void;
 }
 
+const EVENT_STORE_VERSION = 2;
+
+function migrateEventState(persisted: unknown): Partial<EventState> {
+  if (!persisted || typeof persisted !== 'object') return {};
+  const state = persisted as Partial<EventState>;
+  return {
+    events: Array.isArray(state.events) ? state.events : [],
+    lastGeneratedAt: typeof state.lastGeneratedAt === 'number' && Number.isFinite(state.lastGeneratedAt)
+      ? state.lastGeneratedAt
+      : 0,
+  };
+}
+
 export const useEventStore = create<EventState>()(
   persist(
     (set, get) => ({
@@ -61,6 +74,10 @@ export const useEventStore = create<EventState>()(
         }
       },
     }),
-    { name: 'dopamix_events' }
+    {
+      name: 'dopamix_events',
+      version: EVENT_STORE_VERSION,
+      migrate: (persisted: unknown) => migrateEventState(persisted),
+    }
   )
 );

@@ -9,15 +9,27 @@ import {
   HStack,
   Progress,
 } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { useRewardStore } from '../stores/rewardStore';
-import { AVATARS, SPIN_SEGMENTS } from '../constants/rewards';
+import { useSettingsStore } from '../stores/settingsStore';
+import { AVATARS, MYSTERY_BOX_INTERVAL, SPIN_SEGMENTS } from '../constants/rewards';
 
 const MotionBox = motion.create(Box);
 const MotionButton = motion.create(Button);
 
 const WHEEL_COLORS = ['#FFB800', '#00D395', '#7C3AED', '#F85149', '#FFCD1A', '#00D395'];
+
+function wheelPoint(angle: number, radius: number, center: number): [number, number] {
+  const radians = (angle * Math.PI) / 180;
+  return [center + radius * Math.sin(radians), center - radius * Math.cos(radians)];
+}
+
+function wheelSegmentPath(index: number, segmentAngle: number, radius: number, center: number): string {
+  const start = wheelPoint(index * segmentAngle, radius, center);
+  const end = wheelPoint((index + 1) * segmentAngle, radius, center);
+  return `M ${center} ${center} L ${start[0]} ${start[1]} A ${radius} ${radius} 0 0 1 ${end[0]} ${end[1]} Z`;
+}
 
 function AchievementCard({ achievement }: { achievement: { name: string; description: string; icon: string; unlockedAt: number | null } }) {
   const isUnlocked = achievement.unlockedAt !== null;
@@ -60,6 +72,9 @@ function SpinWheel() {
   const [result, setResult] = useState<{ label: string; amount: number; multiplier?: number } | null>(null);
   const [rotation, setRotation] = useState(0);
   const [canSpin, setCanSpin] = useState(true);
+  const animationsEnabled = useSettingsStore((s) => s.animationsEnabled);
+  const prefersReducedMotion = useReducedMotion();
+  const motionAllowed = animationsEnabled && !prefersReducedMotion;
 
   useEffect(() => {
     const check = () => {
@@ -86,16 +101,19 @@ function SpinWheel() {
       (s) => s.label === spinResult.label
     );
     const segmentAngle = 360 / SPIN_SEGMENTS.length;
-    const targetAngle =
-      360 * 5 + segmentIndex * segmentAngle + segmentAngle / 2;
+    const currentRotation = ((rotation % 360) + 360) % 360;
+    const targetRotation = -((segmentIndex + 0.5) * segmentAngle);
+    const targetAngle = motionAllowed
+      ? 360 * 5 + targetRotation - currentRotation
+      : targetRotation - currentRotation;
 
     setRotation((prev) => prev + targetAngle);
 
     setTimeout(() => {
       setResult(spinResult);
       setSpinning(false);
-    }, 3000);
-  }, [canSpin, spinning, spinWheel]);
+    }, motionAllowed ? 3000 : 0);
+  }, [canSpin, motionAllowed, rotation, spinning, spinWheel]);
 
   return (
     <VStack gap={4}>
@@ -115,7 +133,7 @@ function SpinWheel() {
 
         <motion.div
           animate={{ rotate: rotation }}
-          transition={{ duration: 3, ease: 'easeOut' }}
+          transition={{ duration: motionAllowed ? 3 : 0, ease: 'easeOut' }}
           style={{
             width: '100%',
             height: '100%',
@@ -125,44 +143,48 @@ function SpinWheel() {
             position: 'relative',
           }}
         >
-          {SPIN_SEGMENTS.map((segment, i) => {
-            const angle = (360 / SPIN_SEGMENTS.length) * i;
-            return (
-              <div
-                key={segment.label}
-                style={{
-                  position: 'absolute',
-                  width: '50%',
-                  height: '50%',
-                  transformOrigin: '100% 100%',
-                  transform: `rotate(${angle}deg)`,
-                  background: WHEEL_COLORS[i % WHEEL_COLORS.length],
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '25%',
-                    left: '25%',
-                    transform: 'rotate(45deg)',
-                    fontWeight: 700,
-                    fontSize: '11px',
-                    color: '#fff',
-                  }}
-                >
-                  {segment.label}
-                </span>
-              </div>
-            );
-          })}
+          <svg
+            viewBox="0 0 100 100"
+            role="img"
+            aria-label="Lucky spin prize wheel"
+            width="100%"
+            height="100%"
+          >
+            <circle cx="50" cy="50" r="49" fill="#161B22" />
+            {SPIN_SEGMENTS.map((segment, i) => {
+              const segmentAngle = 360 / SPIN_SEGMENTS.length;
+              const centerAngle = (i + 0.5) * segmentAngle;
+              const [labelX, labelY] = wheelPoint(centerAngle, 29, 50);
+              return (
+                <g key={segment.label}>
+                  <path
+                    d={wheelSegmentPath(i, segmentAngle, 48, 50)}
+                    fill={WHEEL_COLORS[i % WHEEL_COLORS.length]}
+                    stroke="#161B22"
+                    strokeWidth="0.8"
+                  />
+                  <text
+                    x={labelX}
+                    y={labelY}
+                    fill="#fff"
+                    fontSize="7"
+                    fontWeight="700"
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    transform={`rotate(${centerAngle} ${labelX} ${labelY})`}
+                  >
+                    {segment.label}
+                  </text>
+                </g>
+              );
+            })}
+            <circle cx="50" cy="50" r="8" fill="#0D1117" stroke="#FFB800" strokeWidth="1.5" />
+          </svg>
         </motion.div>
       </Box>
 
       <MotionButton
-        whileTap={{ scale: 0.95 }}
+        whileTap={motionAllowed ? { scale: 0.95 } : undefined}
         onClick={handleSpin}
         disabled={!canSpin || spinning}
         bg="#FFB800"
@@ -178,14 +200,16 @@ function SpinWheel() {
 
       {result && (
         <MotionBox
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={motionAllowed ? { opacity: 0, y: 10 } : false}
+          animate={motionAllowed ? { opacity: 1, y: 0 } : undefined}
           bg="#21262D"
           border="1px solid"
           borderColor="#664a00"
           borderRadius="lg"
           p={4}
           textAlign="center"
+          role="status"
+          aria-live="polite"
         >
           {result.multiplier ? (
             <Text color="#FFB800" fontWeight="700" fontSize="lg">
@@ -207,7 +231,7 @@ function MysteryBox() {
   const mysteryBoxCount = useRewardStore((s) => s.mysteryBoxCount);
   const [reward, setReward] = useState<{ type: string; amount: number } | null>(null);
 
-  if (mysteryBoxCount < 5) return null;
+  if (mysteryBoxCount < MYSTERY_BOX_INTERVAL && !reward) return null;
 
   const handleOpen = () => {
     const result = openMysteryBox();
@@ -271,17 +295,24 @@ function AvatarSelector() {
           const isSelected = selected === avatar.id;
 
           return (
-            <Box
+            <Button
               key={avatar.id}
               onClick={() => isUnlocked && selectAvatar(avatar.id)}
+              type="button"
+              disabled={!isUnlocked}
+              aria-pressed={isSelected}
+              aria-label={`${avatar.name}${isUnlocked ? (isSelected ? ', selected' : '') : `, unlocks at level ${avatar.unlockLevel}`}`}
               bg={isSelected ? 'rgba(0,211,149,0.15)' : '#161B22'}
               border="2px solid"
               borderColor={isSelected ? '#00D395' : '#30363D'}
               borderRadius="lg"
               p={3}
+              h="auto"
+              minH="96px"
               textAlign="center"
-              cursor={isUnlocked ? 'pointer' : 'not-allowed'}
               opacity={isUnlocked ? 1 : 0.4}
+              _hover={isUnlocked ? { borderColor: '#00D395' } : undefined}
+              _disabled={{ cursor: 'not-allowed' }}
             >
               <VStack gap={1}>
                 <Box fontSize="2xl" filter={!isUnlocked ? 'grayscale(100%)' : 'none'}>
@@ -296,7 +327,7 @@ function AvatarSelector() {
                   </Text>
                 )}
               </VStack>
-            </Box>
+            </Button>
           );
         })}
       </SimpleGrid>
@@ -407,10 +438,10 @@ export function RewardsPage() {
           p={4}
         >
           <Text fontSize="xs" color="#6E7681" textAlign="center">
-            Bets for boxes: {mysteryBoxCount}/5
+            Bets for boxes: {mysteryBoxCount}/{MYSTERY_BOX_INTERVAL}
           </Text>
           <Progress.Root
-            value={(mysteryBoxCount / 5) * 100}
+            value={(mysteryBoxCount / MYSTERY_BOX_INTERVAL) * 100}
             size="xs"
             colorPalette="purple"
             mt={2}

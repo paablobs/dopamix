@@ -1,4 +1,5 @@
-import { Box, Flex } from '@chakra-ui/react';
+import { Suspense } from 'react';
+import { Box, Flex, Spinner } from '@chakra-ui/react';
 import { Outlet } from 'react-router-dom';
 import { TopBar } from './TopBar';
 import { Sidebar } from './Sidebar';
@@ -16,11 +17,19 @@ export function MainLayout() {
         mt="60px"
         ml={{ base: 0, md: '240px' }}
         mr={{ base: 0, lg: '360px' }}
-        mb={{ base: '60px', md: 0 }}
+        mb={{ base: 'calc(60px + env(safe-area-inset-bottom))', md: 0 }}
         overflow="auto"
       >
         <Box p={4}>
-          <Outlet />
+          <Suspense
+            fallback={
+              <Box minH="50vh" display="grid" placeItems="center" color="fg.subtle">
+                <Spinner size="sm" />
+              </Box>
+            }
+          >
+            <Outlet />
+          </Suspense>
         </Box>
       </Box>
       <BetSlip />

@@ -45,15 +45,22 @@ export function EventList() {
       />
 
       <HStack
+        role="search"
         bg="#161B22"
         border="1px solid #30363D"
         borderRadius="md"
         px={3}
         py={2}
         gap={2}
+        minH="44px"
+        _focusWithin={{
+          borderColor: '#00D395',
+          boxShadow: '0 0 0 1px #00D395',
+        }}
       >
-        <Search size={16} color="#6E7681" />
+        <Search size={16} color="#6E7681" aria-hidden="true" />
         <Input
+          aria-label="Search team or league"
           placeholder="Search team or league..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}

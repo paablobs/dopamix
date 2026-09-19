@@ -1,11 +1,13 @@
+import { lazy } from 'react';
 import { createHashRouter, RouterProvider } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
-import { HomePage } from '../pages/HomePage';
-import { EventsPage } from '../pages/EventsPage';
-import { HistoryPage } from '../pages/HistoryPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import { RewardsPage } from '../pages/RewardsPage';
-import { SettingsPage } from '../pages/SettingsPage';
+
+const HomePage = lazy(async () => ({ default: (await import('../pages/HomePage')).HomePage }));
+const EventsPage = lazy(async () => ({ default: (await import('../pages/EventsPage')).EventsPage }));
+const HistoryPage = lazy(async () => ({ default: (await import('../pages/HistoryPage')).HistoryPage }));
+const DashboardPage = lazy(async () => ({ default: (await import('../pages/DashboardPage')).DashboardPage }));
+const RewardsPage = lazy(async () => ({ default: (await import('../pages/RewardsPage')).RewardsPage }));
+const SettingsPage = lazy(async () => ({ default: (await import('../pages/SettingsPage')).SettingsPage }));
 
 const router = createHashRouter([
   {

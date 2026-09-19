@@ -17,12 +17,12 @@ export function MobileNav() {
       bottom={0}
       left={0}
       right={0}
-      h="60px"
+      h="calc(60px + env(safe-area-inset-bottom))"
+      pb="env(safe-area-inset-bottom)"
       bg="#161B22"
       borderTop="1px solid #30363D"
       display={{ base: 'flex', md: 'none' }}
       align="center"
-      justify="space-around"
       zIndex={1000}
     >
       {tabs.map((tab) => (
@@ -30,15 +30,23 @@ export function MobileNav() {
           key={tab.to}
           to={tab.to}
           end={tab.to === '/'}
-          style={{ textDecoration: 'none' }}
+          style={{ textDecoration: 'none', flex: 1, height: '100%' }}
         >
           {({ isActive }) => (
             <Box
               display="flex"
               flexDirection="column"
               alignItems="center"
+              justifyContent="center"
+              w="full"
+              h="full"
+              minH="60px"
               gap={0.5}
               color={isActive ? '#00D395' : '#8B949E'}
+              _focusVisible={{
+                outline: '2px solid #00D395',
+                outlineOffset: '-4px',
+              }}
             >
               <tab.icon size={20} />
               <Text fontSize="xs" fontWeight={isActive ? '600' : '400'}>

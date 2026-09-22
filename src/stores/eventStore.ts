@@ -1,10 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { FictionalEvent } from '../types';
-import { refreshEvents } from '../services/eventEngine';
-
-const LIVE_DURATION = 120000;
-const FINISHED_DURATION = 300000;
+import {
+  EVENT_FINISHED_RETENTION,
+  getEventStatusAt,
+  refreshEvents,
+} from '../services/eventEngine';
 
 interface EventState {
   events: FictionalEvent[];
@@ -53,19 +54,16 @@ export const useEventStore = create<EventState>()(
         let changed = false;
 
         const updated = events.map((e) => {
-          if (e.status === 'upcoming' && e.startTime <= now) {
+          const status = getEventStatusAt(e, now);
+          if (status !== e.status) {
             changed = true;
-            return { ...e, status: 'live' as const };
-          }
-          if (e.status === 'live' && e.startTime + LIVE_DURATION <= now) {
-            changed = true;
-            return { ...e, status: 'finished' as const };
+            return { ...e, status };
           }
           return e;
         });
 
         const filtered = updated.filter((e) => {
-          if (e.status === 'finished' && e.startTime + FINISHED_DURATION <= now) return false;
+          if (e.status === 'finished' && e.startTime + EVENT_FINISHED_RETENTION <= now) return false;
           return true;
         });
 

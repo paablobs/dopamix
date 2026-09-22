@@ -1,6 +1,6 @@
 import type { EventOdds } from './event';
 
-export type BetStatus = 'active' | 'won' | 'lost';
+export type BetStatus = 'active' | 'won' | 'lost' | 'refunded';
 
 export type BetSelection = 'home' | 'draw' | 'away';
 

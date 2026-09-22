@@ -107,6 +107,7 @@ export function DashboardPage() {
     let currentStreak = 0;
     let biggestWin = 0;
     for (const bet of betHistory) {
+      if (bet.status === 'refunded') continue;
       if (bet.profit !== null) {
         if (bet.profit >= 0) {
           totalWon += bet.profit;
@@ -220,8 +221,8 @@ export function DashboardPage() {
                       {bet.selection === 'home' ? 'Home' : bet.selection === 'draw' ? 'Draw' : 'Away'} @ {bet.odds.toFixed(2)}
                     </Text>
                   </VStack>
-                  <Text fontSize="sm" fontWeight="600" flexShrink={0} color={bet.status === 'won' ? COLORS.win : bet.status === 'lost' ? COLORS.loss : COLORS.active}>
-                    {bet.status === 'active' ? 'Active' : bet.profit !== null ? `${bet.profit >= 0 ? '+' : '-'}${formatCurrency(Math.abs(bet.profit), currencyFormat)}` : '-'}
+                  <Text fontSize="sm" fontWeight="600" flexShrink={0} color={bet.status === 'won' ? COLORS.win : bet.status === 'lost' ? COLORS.loss : bet.status === 'refunded' ? '#8B949E' : COLORS.active}>
+                    {bet.status === 'active' ? 'Active' : bet.status === 'refunded' ? 'Refunded' : bet.profit !== null ? `${bet.profit >= 0 ? '+' : '-'}${formatCurrency(Math.abs(bet.profit), currencyFormat)}` : '-'}
                   </Text>
                 </HStack>
               ))}

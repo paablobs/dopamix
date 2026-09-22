@@ -58,19 +58,19 @@ function HistoryBetRow({ bet }: { bet: Bet }) {
       </VStack>
       <VStack align="end" gap={1}>
         <Badge
-          bg={bet.status === 'won' ? '#00D395' : '#F85149'}
+          bg={bet.status === 'won' ? '#00D395' : bet.status === 'refunded' ? '#8B949E' : '#F85149'}
           color="white"
           fontSize="xs"
           px={2}
           py={0.5}
           borderRadius="sm"
         >
-          {bet.status === 'won' ? 'Won' : 'Lost'}
+          {bet.status === 'won' ? 'Won' : bet.status === 'refunded' ? 'Refunded' : 'Lost'}
         </Badge>
         <Text
           fontSize="sm"
           fontWeight="600"
-          color={bet.status === 'won' ? '#00D395' : '#F85149'}
+          color={bet.status === 'won' ? '#00D395' : bet.status === 'refunded' ? '#8B949E' : '#F85149'}
         >
           {formatProfit(bet.profit)}
         </Text>

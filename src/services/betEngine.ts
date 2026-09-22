@@ -1,10 +1,37 @@
-import type { Bet, BetSelection, EventOdds } from '../types';
+import type { Bet, BetSelection, BetSlipItem, EventOdds, FictionalEvent } from '../types';
 import { HOUSE_EDGE, XP_PER_BET, XP_PER_WIN_BONUS } from '../constants/betting';
 import { randomInt, weightedRandom } from '../utils/random';
 import { generateId } from '../utils/id';
 
 export function calculatePotentialWin(stake: number, odds: number): number {
   return Math.round(stake * odds * 100) / 100;
+}
+
+function isBetSelection(value: unknown): value is BetSelection {
+  return value === 'home' || value === 'draw' || value === 'away';
+}
+
+function hasSameOdds(left: EventOdds | undefined, right: EventOdds): boolean {
+  return !!left && left.home === right.home && left.draw === right.draw && left.away === right.away;
+}
+
+function isValidEventOdds(odds: unknown): odds is EventOdds {
+  if (!odds || typeof odds !== 'object') return false;
+  const candidate = odds as Partial<EventOdds>;
+  return typeof candidate.home === 'number' && candidate.home > 0 &&
+    typeof candidate.away === 'number' && candidate.away > 0 &&
+    (candidate.draw === null || (typeof candidate.draw === 'number' && candidate.draw > 0));
+}
+
+export function isValidBetSlipItem(item: unknown, event: FictionalEvent): item is BetSlipItem {
+  if (!item || typeof item !== 'object') return false;
+  const candidate = item as Partial<BetSlipItem>;
+  if (candidate.eventId !== event.id || !isBetSelection(candidate.selection)) return false;
+  if (!isValidEventOdds(event.odds)) return false;
+
+  const currentOdds = event.odds[candidate.selection];
+  if (currentOdds === null || !Number.isFinite(currentOdds) || candidate.odds !== currentOdds) return false;
+  return hasSameOdds(candidate.eventOdds, event.odds);
 }
 
 export function resolveOutcome(

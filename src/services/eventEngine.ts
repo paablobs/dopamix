@@ -8,6 +8,15 @@ import {
   LEAGUE_NAMES,
 } from '../constants/events';
 
+export const EVENT_LIVE_DURATION = 120000;
+export const EVENT_FINISHED_RETENTION = 600000;
+
+export function getEventStatusAt(event: FictionalEvent, now = Date.now()): EventStatus {
+  if (now < event.startTime) return 'upcoming';
+  if (now < event.startTime + EVENT_LIVE_DURATION) return 'live';
+  return 'finished';
+}
+
 function generateTeamName(): string {
   return `${randomChoice(TEAM_ADJECTIVES)} ${randomChoice(TEAM_NOUNS)}`;
 }
@@ -30,8 +39,8 @@ export function generateEvent(category?: EventCategory): FictionalEvent {
   const now = Date.now();
   const startOffset = randomInt(-300000, 7200000);
   const startTime = now + startOffset;
-  const isLive = startOffset < 0 && startOffset > -3600000;
-  const isFinished = startOffset < -3600000;
+  const isLive = startOffset < 0 && startOffset > -EVENT_LIVE_DURATION;
+  const isFinished = startOffset <= -EVENT_LIVE_DURATION;
 
   let status: EventStatus = 'upcoming';
   if (isLive) status = 'live';

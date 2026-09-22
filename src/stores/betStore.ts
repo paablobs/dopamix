@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Bet, BetSlipItem } from '../types';
-import { createBet, calculateXpReward, resolveOutcome } from '../services/betEngine';
+import {
+  createBet,
+  calculateXpReward,
+  isValidBetSlipItem,
+  resolveOutcome,
+} from '../services/betEngine';
 import { useBalanceStore } from './balanceStore';
 import { useRewardStore } from './rewardStore';
 import { useEventStore } from './eventStore';
 import { notifyBetWon, notifyBetLost } from '../services/notificationService';
 import { MAX_BET_HISTORY } from '../constants/rewards';
 import { MIN_STAKE } from '../constants/betting';
+import { getEventStatusAt } from '../services/eventEngine';
 
 interface BetState {
   betSlip: BetSlipItem[];
@@ -61,18 +67,22 @@ export const useBetStore = create<BetState>()(
         if (!Number.isSafeInteger(stake) || stake < MIN_STAKE) return false;
 
         const selection = betSlip[0];
+        if (!selection || typeof selection !== 'object' || typeof selection.eventId !== 'string') return false;
         const event = useEventStore.getState().events.find((e) => e.id === selection.eventId);
-        if (!event || event.status === 'finished') return false;
+        if (!event || getEventStatusAt(event) === 'finished' || !isValidBetSlipItem(selection, event)) return false;
+
+        const odds = event.odds[selection.selection];
+        if (odds === null) return false;
 
         const balanceStore = useBalanceStore.getState();
         if (!balanceStore.deductCredits(stake)) return false;
 
         const bet = createBet(
-          selection.eventId,
-          selection.eventSummary,
+          event.id,
+          `${event.homeTeam} vs ${event.awayTeam}`,
           selection.selection,
-          selection.odds,
-          selection.eventOdds,
+          odds,
+          event.odds,
           stake
         );
 
@@ -90,19 +100,41 @@ export const useBetStore = create<BetState>()(
       tickBets: () => {
         const now = Date.now();
         const { activeBets } = get();
+        const events = useEventStore.getState().events;
+        const orphanedBets = activeBets.filter(
+          (bet) => !events.some((event) => event.id === bet.eventId)
+        );
         const toResolve: Bet[] = [];
 
         activeBets.forEach((bet) => {
           const elapsed = (now - bet.placedAt) / 1000;
-          if (elapsed >= bet.resolutionDelay) {
+          const event = events.find((candidate) => candidate.id === bet.eventId);
+          if (!event || getEventStatusAt(event, now) === 'upcoming') return;
+
+          const readyAt = Math.max(
+            bet.placedAt + bet.resolutionDelay * 1000,
+            event.startTime,
+          );
+          if (elapsed >= bet.resolutionDelay && now >= readyAt) {
             toResolve.push(bet);
           }
         });
 
-        if (toResolve.length === 0) return;
+        if (toResolve.length === 0 && orphanedBets.length === 0) return;
 
         const balanceStore = useBalanceStore.getState();
         const rewardStore = useRewardStore.getState();
+
+        orphanedBets.forEach((bet) => {
+          balanceStore.addCredits(bet.stake, `Refunded: ${bet.eventSummary}`);
+        });
+
+        const refundedBets = orphanedBets.map((bet) => ({
+          ...bet,
+          status: 'refunded' as const,
+          resolvedAt: now,
+          profit: 0,
+        }));
 
         const resolvedBets = toResolve.map((bet) => {
           const won = bet.eventOdds
@@ -134,9 +166,11 @@ export const useBetStore = create<BetState>()(
 
         set((state) => ({
           activeBets: state.activeBets.filter(
-            (b) => !toResolve.find((r) => r.id === b.id)
+            (b) => !orphanedBets.some((orphaned) => orphaned.id === b.id) &&
+              !toResolve.some((resolved) => resolved.id === b.id)
           ),
           betHistory: [
+            ...refundedBets,
             ...resolvedBets,
             ...state.betHistory,
           ].slice(0, MAX_BET_HISTORY),

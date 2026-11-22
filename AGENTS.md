@@ -1,11 +1,22 @@
 # DopamiX - Agent Guide
 
+## Stack
+
+- React 19 + TypeScript 6
+- Chakra UI v3 — component library
+- Zustand — state management with localStorage persistence
+- React Router v7 — client-side routing
+- Framer Motion — animations
+- Recharts — dashboard charts
+- Vite 8 — build tooling
+
 ## Commands
 
-- `pnpm install` — install deps (pnpm enforced, will fail with npm/yarn)
+- `pnpm install` — install deps (pnpm enforced by a preinstall script, will fail with npm/yarn)
 - `pnpm run build` — typecheck (`tsc -b`) then vite build
 - `pnpm run lint` — eslint
 - `pnpm run dev` — vite dev server
+- `pnpm run preview` — preview the production build
 - No test runner configured.
 
 Run `pnpm run build` before committing. It catches type errors that lint misses (`noUnusedLocals`, `noUnusedParameters` are strict).
@@ -13,6 +24,21 @@ Run `pnpm run build` before committing. It catches type errors that lint misses 
 ## Architecture
 
 React 19 + Chakra UI v3 + Zustand + React Router v7 + Vite 8.
+
+```
+src/
+├── app/            # App root and router
+├── components/     # Layout (TopBar, Sidebar, MainLayout, MobileNav)
+├── constants/      # Config values (betting, balance, rewards, events)
+├── features/       # Feature modules (betting, events, balance)
+├── hooks/          # Custom hooks (useCountdown, useInterval, useMediaQuery)
+├── pages/          # Route pages (Home, Events, History, Dashboard, Rewards, Settings)
+├── services/       # Business logic (betEngine, eventEngine, rewardEngine, notifications)
+├── stores/         # Zustand stores (bet, balance, event, reward, settings, ui)
+├── theme/          # Chakra UI theme config
+├── types/          # TypeScript interfaces
+└── utils/          # Helpers (format, probability, random, id)
+```
 
 - `src/main.tsx` — entrypoint, mounts ChakraProvider
 - `src/app/App.tsx` — root component, runs game loop (1s interval: tickBets, tickEvents, refreshExpired), renders Toaster + DailyRewardModal
@@ -37,7 +63,7 @@ React 19 + Chakra UI v3 + Zustand + React Router v7 + Vite 8.
 
 ## Deployment
 
-GitHub Pages via `.github/workflows/deploy.yml`. Requires `base: './'` in vite.config.ts and `404.html` copy for SPA routing. Source must be set to "GitHub Actions" in repo Settings → Pages.
+GitHub Pages via `.github/workflows/deploy.yml`. Pushing to `main` triggers it: the workflow builds the app, copies `index.html` to `404.html` for SPA routing, and deploys to Pages. Requires `base: './'` in vite.config.ts and `404.html` copy for SPA routing. Source must be set to "GitHub Actions" in repo Settings → Pages.
 
 ## Style
 

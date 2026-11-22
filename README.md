@@ -14,10 +14,6 @@ Everything runs in your browser, so your balance and progress stick around betwe
 - **Dashboard** — charts for balance history, win/loss ratio, daily activity
 - **Dark theme** — GitHub-inspired color palette
 
-## Working on the code
-
-Setup, commands, architecture and deployment notes are in [AGENTS.md](AGENTS.md).
-
 ## License
 
 Private project.
